@@ -25,11 +25,11 @@ fn spell_check(input:&str, dictionary:&HashMap<String, usize>) {
         return println!("{}", input);
     }
 
-    let candidate_words:HashSet<String> = HashSet::new();
+    let mut candidate_words:HashSet<String> = HashSet::new();
     candidate_words.insert(input.to_string());
 
-    candidate_words = check_edits(candidate_words, dictionary);
-    candidate_words = check_edits(candidate_words, dictionary);
+    check_edits(&mut candidate_words);
+    check_edits(&mut candidate_words);
 
     let correct_word:String = find_probable_match(dictionary, candidate_words);
 
@@ -41,8 +41,8 @@ fn spell_check(input:&str, dictionary:&HashMap<String, usize>) {
 }
 
 fn find_probable_match(dictionary: &HashMap<String, usize>, candidate_words:HashSet<String>) -> String {
-    let best_word:String = String::new();
-    let best_count:usize = 0;
+    let mut best_word:String = String::new();
+    let mut best_count:usize = 0;
     for word in candidate_words {
         if let Some(count) = dictionary.get(&word) {
             if *count > best_count {
@@ -55,23 +55,21 @@ fn find_probable_match(dictionary: &HashMap<String, usize>, candidate_words:Hash
     best_word
 }
 
-fn check_edits(words:HashSet<String>, dictionary:&HashMap<String, usize>) -> HashSet<String> {
-    let mut words_so_far:HashSet<String> = HashSet::new();
+fn check_edits(words:&mut HashSet<String>){
+    let mut words_so_far:HashSet<String> = words.clone();
 
-    for word in words {
+    for word in words_so_far {
         for i in 0..word.len() {
-            words_so_far = check_insert(&word, &words_so_far, dictionary, i);
-            words_so_far = check_delete(&word, &words_so_far, dictionary, i);
-            words_so_far = check_replace(&word, &words_so_far, dictionary, i);
-            words_so_far = check_transpose(&word, &words_so_far, dictionary, i);
+            check_insert(&word, words,i);
+            check_delete(&word, words,i);
+            check_replace(&word, words,i);
+            check_transpose(&word, words,i);
         }
     }
-
-    words_so_far
 }
 
-fn check_insert(input:&str, words:&HashSet<String>, dictionary:&HashMap<String, usize>, index:usize) -> HashSet<String> {
-    let mut res:HashSet<String> = *words;
+fn check_insert(input:&str, words:&mut HashSet<String>, index:usize){
+    // let mut res:HashSet<String> = words.clone();
 
     for letter in ALPHABET.into_iter() {
         let mut prefix = &input[..index];
@@ -79,21 +77,19 @@ fn check_insert(input:&str, words:&HashSet<String>, dictionary:&HashMap<String, 
 
         let word:String = format!("{}{}{}", prefix, letter, suffix);
 
-        res.insert(word);
+        words.insert(word);
     }
-
-    res
 }
 
-fn check_delete(input:&str, words:&HashSet<String>, dictionary:&HashMap<String, usize>, index:usize) -> HashSet<String> {
-	let word:String = input[0..index] + input[index+1..];
+fn check_delete(input:&str, words:&mut HashSet<String>, index:usize) {
+	// let input_str: String = input.to_string();
+    let left: String = (input[..index]).to_owned();
+
+    let word:String = left + &input[index+1..];
     words.insert(word);
-
-	words
 }
 
-fn check_replace(input:&str, words:&HashSet<String>, dictionary:&HashMap<String, usize>, index:usize) -> HashSet<String> {
-    let mut res:HashSet<String> = *words;
+fn check_replace(input:&str, words:&mut HashSet<String>, index:usize) {
     let mut word:String = String::new();
 
     for letter in ALPHABET.into_iter() {
@@ -108,22 +104,23 @@ fn check_replace(input:&str, words:&HashSet<String>, dictionary:&HashMap<String,
             word = format!("{}{}{}", prefix, letter, suffix);
         }
 
-        res.insert(word.to_owned());
+        words.insert(word.to_owned());
     }
-
-    res
 }
 
-//fn check_transpose(input:&str, words:&HashSet<String>, dictionary:&HashMap<String, usize>, index:usize) -> HashSet<String> {
-	//let transpoed:String = 
-	//let swapped_string: String =  ((input.to_owned())[0..index]).to_string() +
-		//(input.to_owned()).chars().nth(index+1).unwrap().to_string()+
-		//(input.to_owned()).chars().nth(index).unwrap().to_string() + 
-		//((input.to_owned())[index+2..]).to_string();
-	//words.insert(swapped_string);
+fn check_transpose(input:&str, words:&mut HashSet<String>, index:usize) {
+	// if index < input.to_owned().len(){
+        
+    // }
+    let pre_i:String = (input[..index]).to_owned();
+    let post_i1: String = (input[index..]).to_owned();
+	let mut swapped_string: String =  pre_i;
+    swapped_string+= &(input.to_owned().chars().nth(index+1).unwrap().to_string());
+	swapped_string+= &(input.to_owned().chars().nth(index).unwrap().to_string());
+	swapped_string+= &(post_i1);
+	words.insert(swapped_string);
 
-    //words
-//}
+}
 
 fn read_input<R: Read>(mut reader: R) -> Vec<String> {
     let mut buffer = String::new();
@@ -137,7 +134,7 @@ fn read_input<R: Read>(mut reader: R) -> Vec<String> {
 }
 
 fn read_train_file() -> String {
-    let file_name = env::args().nth(2).unwrap();
+    let file_name = env::args().nth(1).unwrap();
     let mut f = File::open(file_name).unwrap();
     let mut buffer = String::new();
     f.read_to_string(&mut buffer).ok();
