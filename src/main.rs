@@ -1,55 +1,129 @@
 use std::env;
 use std::fs::File;
 use std::io::{stdin, Read};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-mod trie;
+//mod trie;
 
+const ALPHABET: [char; 26] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
 fn main() {
-    let alphabet:Vec<char> = vec!['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
     let words = process_input(read_train_file());
-    let t = build_trie(count_words(words));
+    let dictionary = count_words(words);
 
     let user_input = read_input(stdin());
 
     for s in &user_input {
-        spell_check(&s.to_lowercase(), &t)
+        spell_check(&s.to_lowercase(), &dictionary)
     }
 
     println!("user input: {:?}", user_input);
 }
 
-fn spell_check(input:&str, trie:&trie::Trie<char, String>) {
-    let mut input_:Vec<char> = input.chars().collect();
+fn spell_check(input:&str, dictionary:&HashMap<String, usize>) {
 
-    if let Some(result) = trie.fetch(&input_) {
-        println!("{}", input);
+    if let Some(result) = dictionary.get(input) {
+        return println!("{}", input);
     }
 
-    for i in 0..input_.len() {
-        /*
-         *  call check_* on index i. this will return intermediate string 'temp' with one edit. check if 
-         *  temp is in trie. if it is, then print it :) otherwise loop again over all indices of temp and 
-         *  call check_* again. check again if the results are in trie.
-         */
+    let candidate_words:HashSet<String> = HashSet::new();
+    candidate_words.insert(input.to_string());
+
+    candidate_words = check_edits(candidate_words, dictionary);
+    candidate_words = check_edits(candidate_words, dictionary);
+
+    let correct_word:String = find_probable_match(dictionary, candidate_words);
+
+    if correct_word.is_empty() {
+        println!("{}, -", input);
+    } else {
+        println!("{}, {}", input, correct_word);
     }
 }
 
-fn check_insert(input:&str, trie:&trie::Trie<char, String>, index:usize) -> String {
-    "not implemented yet".to_string()
+fn find_probable_match(dictionary: &HashMap<String, usize>, candidate_words:HashSet<String>) -> String {
+    let best_word:String = String::new();
+    let best_count:usize = 0;
+    for word in candidate_words {
+        if let Some(count) = dictionary.get(&word) {
+            if *count > best_count {
+                best_count = *count;
+                best_word= word;
+            }
+        }
+    }
+
+    best_word
 }
 
-fn check_delete(input:&str, trie:&trie::Trie<char, String>, index:usize) -> String {
-    "not implemented yet".to_string()
+fn check_edits(words:HashSet<String>, dictionary:&HashMap<String, usize>) -> HashSet<String> {
+    let mut words_so_far:HashSet<String> = HashSet::new();
+
+    for word in words {
+        for i in 0..word.len() {
+            words_so_far = check_insert(&word, &words_so_far, dictionary, i);
+            words_so_far = check_delete(&word, &words_so_far, dictionary, i);
+            words_so_far = check_replace(&word, &words_so_far, dictionary, i);
+            words_so_far = check_transpose(&word, &words_so_far, dictionary, i);
+        }
+    }
+
+    words_so_far
 }
 
-fn check_replace(input:&str, trie:&trie::Trie<char, String>, index:usize) -> String {
-    "not implemented yet".to_string()
+fn check_insert(input:&str, words:&HashSet<String>, dictionary:&HashMap<String, usize>, index:usize) -> HashSet<String> {
+    let mut res:HashSet<String> = *words;
+
+    for letter in ALPHABET.into_iter() {
+        let mut prefix = &input[..index];
+        let suffix = &input[index..];
+
+        let word:String = format!("{}{}{}", prefix, letter, suffix);
+
+        res.insert(word);
+    }
+
+    res
 }
 
-fn check_swap(input:&str, trie:&trie::Trie<char, String>, index:usize) -> String {
-    "not implemented yet".to_string()
+fn check_delete(input:&str, words:&HashSet<String>, dictionary:&HashMap<String, usize>, index:usize) -> HashSet<String> {
+	let word:String = input[0..index] + input[index+1..];
+    words.insert(word);
+
+	words
 }
+
+fn check_replace(input:&str, words:&HashSet<String>, dictionary:&HashMap<String, usize>, index:usize) -> HashSet<String> {
+    let mut res:HashSet<String> = *words;
+    let mut word:String = String::new();
+
+    for letter in ALPHABET.into_iter() {
+        if input.len() < 1 {
+            word = letter.to_string();
+            continue;
+        }
+        else {
+            let mut prefix = &input[..index];
+            let suffix = &input[index-1..];
+
+            word = format!("{}{}{}", prefix, letter, suffix);
+        }
+
+        res.insert(word.to_owned());
+    }
+
+    res
+}
+
+//fn check_transpose(input:&str, words:&HashSet<String>, dictionary:&HashMap<String, usize>, index:usize) -> HashSet<String> {
+	//let transpoed:String = 
+	//let swapped_string: String =  ((input.to_owned())[0..index]).to_string() +
+		//(input.to_owned()).chars().nth(index+1).unwrap().to_string()+
+		//(input.to_owned()).chars().nth(index).unwrap().to_string() + 
+		//((input.to_owned())[index+2..]).to_string();
+	//words.insert(swapped_string);
+
+    //words
+//}
 
 fn read_input<R: Read>(mut reader: R) -> Vec<String> {
     let mut buffer = String::new();
@@ -89,25 +163,6 @@ fn count_words(words: Vec<String>) -> HashMap<String, usize> {
     }
 
     counts
-}
-
-fn build_trie(dictionary:HashMap<String, usize>) -> trie::Trie<char, String> {
-    let mut t:trie::Trie<char, String> = trie::Trie::new();
-    
-    for (k, v) in dictionary {
-        t.insert(k.chars().collect(), k) 
-    }
-
-    t
-}
-
-fn print_results(results:HashMap<String, usize>) {
-    let mut temp: Vec<_> = results.iter().collect();
-
-    temp.sort_by(|a, b| a.1.cmp(b.1));
-    for pair in temp.iter() {
-        println!("{}: {}", pair.0, pair.1);
-    }
 }
 
 //#[cfg(test)]

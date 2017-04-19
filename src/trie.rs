@@ -2,8 +2,8 @@ use std::collections::hash_map::HashMap;
 use std::hash::Hash;
 
 pub struct Trie<K, V> where K: Eq+Hash+Clone, V: Clone {
-    value: Option<V>,
-    children: HashMap<K, Trie<K, V>>,
+    pub value: Option<V>,
+    pub children: HashMap<K, Trie<K, V>>,
 }
 
 impl<K, V> Trie<K,V> where K: Eq+Hash+Clone, V: Clone {
