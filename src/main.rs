@@ -15,15 +15,13 @@ fn main() {
     for s in &user_input {
         spell_check(&s.to_lowercase(), &dictionary)
     }
-
-    // println!("user input: {:?}", user_input);
 }
 
 fn spell_check(input:&str, dictionary:&HashMap<String, usize>) {
 
     if let Some(result) = dictionary.get(input) {
-        return println!("These words were found in the dictionary, {}", input);
-        // return;
+        // if input is correctly spelt
+        return println!("{}", input);
     }
 
     let mut candidate_words:HashSet<String> = HashSet::new();
@@ -33,11 +31,11 @@ fn spell_check(input:&str, dictionary:&HashMap<String, usize>) {
     check_edits(&mut candidate_words);
 
     let correct_word:String = find_probable_match(dictionary, candidate_words);
-
+    // if input is incorrectly spelt
     if correct_word.is_empty() {
         println!("{}, -", input);
     } else {
-        println!("Your spelling: {}, correct spelling: {}", input, correct_word);
+        println!("{},{}", input, correct_word);
     }
 }
 
@@ -70,8 +68,6 @@ fn check_edits(words:&mut HashSet<String>){
 }
 
 fn check_insert(input:&str, words:&mut HashSet<String>, index:usize){
-    // let mut res:HashSet<String> = words.clone();
-
     for letter in ALPHABET.into_iter() {
         let prefix = &input[..index];
         let suffix = &input[index..];
@@ -200,18 +196,5 @@ fn count_words(words: Vec<String>) -> HashMap<String, usize> {
             counts.insert(word.to_string(), 1);
         }
     }
-
-    // counts.insert("checkcheckcheck".to_string(), 1);
     counts
 }
-
-//#[cfg(test)]
-//mod mean_and_sum_tests {
-    //use super::{sum, mean, calculate_results};
-
-    //#[test]
-    //fn sum_empty_is_0() {
-        //assert_eq!(0., sum(&[]));
-    //}
-//}
-
