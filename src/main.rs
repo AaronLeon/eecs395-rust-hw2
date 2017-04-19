@@ -16,13 +16,14 @@ fn main() {
         spell_check(&s.to_lowercase(), &dictionary)
     }
 
-    println!("user input: {:?}", user_input);
+    // println!("user input: {:?}", user_input);
 }
 
 fn spell_check(input:&str, dictionary:&HashMap<String, usize>) {
 
     if let Some(result) = dictionary.get(input) {
-        return println!("{}", input);
+        return println!("These words were found in the dictionary, {}", input);
+        // return;
     }
 
     let mut candidate_words:HashSet<String> = HashSet::new();
@@ -36,7 +37,7 @@ fn spell_check(input:&str, dictionary:&HashMap<String, usize>) {
     if correct_word.is_empty() {
         println!("{}, -", input);
     } else {
-        println!("{}, {}", input, correct_word);
+        println!("Your spelling: {}, correct spelling: {}", input, correct_word);
     }
 }
 
@@ -56,7 +57,7 @@ fn find_probable_match(dictionary: &HashMap<String, usize>, candidate_words:Hash
 }
 
 fn check_edits(words:&mut HashSet<String>){
-    let mut words_so_far:HashSet<String> = words.clone();
+    let words_so_far:HashSet<String> = words.clone();
 
     for word in words_so_far {
         for i in 0..word.len() {
@@ -72,7 +73,7 @@ fn check_insert(input:&str, words:&mut HashSet<String>, index:usize){
     // let mut res:HashSet<String> = words.clone();
 
     for letter in ALPHABET.into_iter() {
-        let mut prefix = &input[..index];
+        let prefix = &input[..index];
         let suffix = &input[index..];
 
         let word:String = format!("{}{}{}", prefix, letter, suffix);
@@ -82,44 +83,85 @@ fn check_insert(input:&str, words:&mut HashSet<String>, index:usize){
 }
 
 fn check_delete(input:&str, words:&mut HashSet<String>, index:usize) {
-	// let input_str: String = input.to_string();
-    let left: String = (input[..index]).to_owned();
-
-    let word:String = left + &input[index+1..];
-    words.insert(word);
+    let mut word:String = "".to_string();
+    let input_string: String = input.to_string();
+    // let left: String = (input[..index]).to_owned();
+    for (pos, c) in input_string.chars().enumerate() {
+        if pos == index{
+            continue;
+        }
+        else{ 
+            word.push(c)
+        }
+    }
+    words.insert(word.to_owned());
+    // let word:String = left + &input[index+1..];
+    // words.insert(word);
 }
 
 fn check_replace(input:&str, words:&mut HashSet<String>, index:usize) {
-    let mut word:String = String::new();
-
+    // let mut word = "";
+    let mut temp_word:String = "".to_owned();
+    let input_string: String = input.to_string();
     for letter in ALPHABET.into_iter() {
         if input.len() < 1 {
-            word = letter.to_string();
+            // word = letter.to_string();
             continue;
         }
         else {
-            let mut prefix = &input[..index];
-            let suffix = &input[index-1..];
-
-            word = format!("{}{}{}", prefix, letter, suffix);
+            for (pos, c) in input_string.chars().enumerate() {
+                if pos == index{
+                    // let repl: char = *letter;
+                    // let temp_word:String = format!("{}{}", word, repl);
+                    // word = temp_word.as_str();
+                    temp_word.push(*letter);
+                }
+                else{ 
+                    // let temp_word:String = format!("{}{}", word,c);
+                    // word = temp_word.as_str();
+                    temp_word.push(c);
+                }
+            }
         }
 
-        words.insert(word.to_owned());
+         if temp_word.len() > 0{
+            words.insert(temp_word.clone());
+        }     
     }
 }
 
 fn check_transpose(input:&str, words:&mut HashSet<String>, index:usize) {
-	// if index < input.to_owned().len(){
-        
-    // }
-    let pre_i:String = (input[..index]).to_owned();
-    let post_i1: String = (input[index..]).to_owned();
-	let mut swapped_string: String =  pre_i;
-    swapped_string+= &(input.to_owned().chars().nth(index+1).unwrap().to_string());
-	swapped_string+= &(input.to_owned().chars().nth(index).unwrap().to_string());
-	swapped_string+= &(post_i1);
-	words.insert(swapped_string);
-
+	// let mut word = "";
+    let mut temp_word:String = "".to_owned();
+    let input_string:String = input.to_string();
+    if input_string.len() <= 1{
+        words.insert(input_string);    
+    }
+    else{
+        for (pos, c) in input_string.chars().enumerate() {
+            if pos == index {
+                if index+1 < input_string.len(){
+                    let next: char = input_string.chars().nth(index+1).unwrap();
+                    // temp_word = format!("{}{}{}", word, next, c);
+                    // temp_word.push_str(word);
+                    temp_word.push(next);
+                    temp_word.push(c);
+                    
+                }
+            }
+            else{ 
+                // temp_word.push_str(word);
+                temp_word.push(c);    
+                // let temp_word:String = word.to_string();
+                // temp_word.push(c);
+                // let temp_word:String = format!("{}{}", word,c);
+                // word = temp_word.as_str();
+            }
+        }
+    }
+    if temp_word.len() > 0{
+            words.insert(temp_word.clone());
+    }  
 }
 
 fn read_input<R: Read>(mut reader: R) -> Vec<String> {
@@ -159,6 +201,7 @@ fn count_words(words: Vec<String>) -> HashMap<String, usize> {
         }
     }
 
+    // counts.insert("checkcheckcheck".to_string(), 1);
     counts
 }
 
